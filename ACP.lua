@@ -306,7 +306,7 @@ function ACP:GetAddonStatus(addon)
     end
 
 
-    local name, title, notes, loadable, reason, security, newVersion = GetAddOnInfo(addon)
+    local name, title, notes, enabled, isondemand, reason, security = GetAddOnInfo(addon)
 
     if reason == "MISSING" and type(addon) == "string" then
         addon = self:ResolveLibraryName(addon) or addon
@@ -314,8 +314,6 @@ function ACP:GetAddonStatus(addon)
 
 
     local loaded = IsAddOnLoaded(addon)
-    local isondemand = IsAddOnLoadOnDemand(addon)
-    local enabled = GetAddOnEnableState(UnitName("player"), addon) > 0;
     local color, note
 
     if reason == "DISABLED" then color, note = "9d9d9d", getreason(reason) -- Grey
@@ -661,8 +659,7 @@ function ACP:OnEvent(this, event, arg1, arg2, arg3)
 
         local reloadRequired = false
         for k,v in pairs(savedVar.ProtectedAddons) do
-            local name, title, notes, loadable, reason, security, newVersion    = GetAddOnInfo(k)
-            local enabled = GetAddOnEnableState(UnitName("player"), name) > 0;
+			local name, title, notes, enabled, isondemand, reason, security = GetAddOnInfo(k)
             if reason == 'MISSING' then
                 savedVar.ProtectedAddons[k] = nil
             elseif (not enabled) or enabled == 0 then
@@ -687,12 +684,6 @@ function ACP:OnEvent(this, event, arg1, arg2, arg3)
     elseif event == "PLAYER_ENTERING_WORLD" then
         this:UnregisterEvent("PLAYER_ENTERING_WORLD")
         this:RegisterEvent("PLAYER_ALIVE")
-
-        GameMenuButtonAddons:SetScript("OnClick", function()
-            PlaySound(SOUNDKIT.IG_MAINMENU_OPTION);
-            HideUIPanel(GameMenuFrame);
-            ShowUIPanel(ACP_AddonList);
-        end)
 
     --        ACP:ProcessBugSack("session")
     end
@@ -1249,7 +1240,7 @@ function ACP:SaveSet(set)
     local name, enabled, _
     for i=1,GetNumAddOns() do
         name =  GetAddOnInfo(i)
-        enabled = GetAddOnEnableState(UnitName("player"), name) > 0;
+		local name, title, notes, enabled, isondemand, reason, security = GetAddOnInfo(name)
 
         if enabled and name ~= ACP_ADDON_NAME and not ACP:IsAddOnProtected(name) then
             table.insert(addonSet, name)
@@ -1657,7 +1648,8 @@ function ACP:AddonList_OnShow_Fast(this)
                     name, title, notes, loadable, reason, security, newVersion  = GetAddOnInfo(addonIdx)
                     obj.addon = addonIdx
                 end
-                local enabled = GetAddOnEnableState(UnitName("player"), name) > 0;
+				
+				local name, title, notes, enabled, ondemand, reason, security = GetAddOnInfo(name)
                 local loaded = IsAddOnLoaded(name)
                 local ondemand = IsAddOnLoadOnDemand(name)
                 if enabled and (loadable or loaded) then
@@ -2093,10 +2085,8 @@ local function enable_lod_dependants(addon)
     end
 
     for i=1,GetNumAddOns() do
-        local name, title, notes, loadable, reason, security, newVersion = GetAddOnInfo(i)
-        local enabled = GetAddOnEnableState(UnitName("player"), GetAddOnInfo(name)) > 0;
+        local name, title, notes, enabled, ondemand, reason, security = GetAddOnInfo(i)
         local isdep = find_iterate_over(addon_name, GetAddOnDependencies(name))
-        local ondemand = IsAddOnLoadOnDemand(name)
 
 --        if not isdep then
 --            local metaXEmbeds = GetAddOnMetadata(name, "X-Embeds")
@@ -2117,7 +2107,8 @@ local function enableFunc(x) ACP_EnableRecurse(x, true) end
 local function enableIfLodFunc(x) if IsAddOnLoadOnDemand(x) then ACP_EnableRecurse(x, true) end end
 
 function ACP_EnableRecurse(name, skip_children)
-    local enabled = GetAddOnEnableState(UnitName("player"), GetAddOnInfo(name)) > 0;
+
+    local name, title, notes, enabled, ondemand, reason, security = GetAddOnInfo(name)
     if enabled then
         return
 
