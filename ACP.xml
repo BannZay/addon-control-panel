@@ -238,6 +238,13 @@
                     </Layers>
                     <Scripts>
                         <OnTextChanged>
+							local text = self:GetText();
+							text, patternMatchedTimes = text:gsub("%[", "");
+							
+							if ( patternMatchedTimes > 0 ) then
+								self:SetText(text);
+							end
+							
                             ACP:SetFilter(self:GetText());
                         </OnTextChanged>
                         <OnEscapePressed>
